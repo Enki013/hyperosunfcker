@@ -1,0 +1,14 @@
+HyperOSUnf*cker helps tune HyperOS devices with Shizuku-backed local ADB shell commands.
+
+Features:
+- HyperOS performance, memory, display, standby, and battery tuning
+- Named HyperOS presets
+- Debloat tools for installed and removed apps
+- Logs with level filtering
+- Experimental visual flags hidden behind a warning section
+
+Requirements:
+- Shizuku must be installed, running, and authorized
+- USB debugging is recommended for recovery and troubleshooting
+
+System tuning and debloat actions can affect device stability. Review each option before applying changes.

@@ -1,0 +1,4 @@
+storeFile=/absolute/path/to/release-key.jks
+keyAlias=hyperosunfcker
+storePassword=change-me
+keyPassword=change-me

@@ -1,0 +1,96 @@
+name: Build Release APK/AAB
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. 1.0.0 or v1.0.0)"
+        required: true
+  push:
+    tags:
+      - "*"
+
+concurrency:
+  group: "release-build"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: "21.x"
+          cache: "gradle"
+          distribution: "adopt"
+
+      - name: Decode release keystore
+        uses: timheuer/base64-to-file@v2
+        with:
+          fileName: "android-keystore.jks"
+          fileDir: "${{ github.workspace }}/"
+          encodedString: ${{ secrets.KEYSTORE_FILE_BASE64 }}
+
+      - name: Create key.properties
+        env:
+          KEYSTORE_PROPERTIES_PATH: ${{ github.workspace }}/key.properties
+        run: |
+          echo "storeFile=${{ github.workspace }}/android-keystore.jks" > $KEYSTORE_PROPERTIES_PATH
+          echo "keyAlias=${{ secrets.KEYSTORE_KEY_ALIAS }}" >> $KEYSTORE_PROPERTIES_PATH
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> $KEYSTORE_PROPERTIES_PATH
+          echo "keyPassword=${{ secrets.KEYSTORE_KEY_PASSWORD }}" >> $KEYSTORE_PROPERTIES_PATH
+
+      - name: Resolve release tag
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RELEASE_TAG="${GITHUB_REF_NAME}"
+          else
+            RELEASE_TAG="${{ github.event.inputs.tag }}"
+          fi
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+      - name: Build release APK and AAB
+        run: ./gradlew :app:assembleRelease :app:bundleRelease
+
+      - name: Collect APK, AAB, and SHA-256
+        run: |
+          mkdir -p release-artifacts
+          cp app/build/outputs/apk/release/app-release.apk release-artifacts/app-release.apk
+          cp app/build/outputs/bundle/release/app-release.aab release-artifacts/app-release.aab
+          cd release-artifacts
+          sha256sum app-release.apk app-release.aab > SHA256SUMS.txt
+
+      - name: Echo SHA-256 sums
+        run: cat release-artifacts/SHA256SUMS.txt
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "HyperOSUnf*cker $RELEASE_TAG" \
+              --notes "See README.md for requirements, safety notes, and credits."
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "HyperOSUnf*cker $RELEASE_TAG" \
+              --notes "See README.md for requirements, safety notes, and credits." \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            release-artifacts/app-release.apk \
+            release-artifacts/app-release.aab \
+            release-artifacts/SHA256SUMS.txt \
+            --clobber
