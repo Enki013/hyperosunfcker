@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -55,6 +57,7 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.tag }}"
           fi
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "RELEASE_TARGET_SHA=$(git rev-list -n 1 "$RELEASE_TAG")" >> $GITHUB_ENV
 
       - name: Build release APK and AAB
         run: ./gradlew :app:assembleRelease :app:bundleRelease
@@ -70,6 +73,126 @@ jobs:
       - name: Echo SHA-256 sums
         run: cat release-artifacts/SHA256SUMS.txt
 
+      - name: Generate changelog from Conventional Commits
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT_TAG="$RELEASE_TAG"
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 "${CURRENT_TAG}^" 2>/dev/null || true)"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+          else
+            RANGE="${CURRENT_TAG}"
+          fi
+
+          tmpdir="$(mktemp -d)"
+          features="$tmpdir/features.md"
+          fixes="$tmpdir/fixes.md"
+          chores="$tmpdir/chores.md"
+          docs="$tmpdir/docs.md"
+          perf="$tmpdir/perf.md"
+          refactor="$tmpdir/refactor.md"
+          build_ci="$tmpdir/build-ci.md"
+          tests="$tmpdir/tests.md"
+          other="$tmpdir/other.md"
+          breaking="$tmpdir/breaking.md"
+
+          touch "$features" "$fixes" "$chores" "$docs" "$perf" "$refactor" "$build_ci" "$tests" "$other" "$breaking"
+          conventional_regex='^([a-zA-Z]+)(\([^)]+\))?(!)?:[[:space:]]+(.+)$'
+
+          while IFS= read -r subject; do
+            [ -z "$subject" ] && continue
+
+            if [[ "$subject" =~ $conventional_regex ]]; then
+              type="${BASH_REMATCH[1]}"
+              bang="${BASH_REMATCH[3]}"
+              text="${BASH_REMATCH[4]}"
+            else
+              type="other"
+              bang=""
+              text="$subject"
+            fi
+
+            [ "$bang" = "!" ] && printf -- "- %s\n" "$text" >> "$breaking"
+
+            case "$type" in
+              feat) printf -- "- %s\n" "$text" >> "$features" ;;
+              fix) printf -- "- %s\n" "$text" >> "$fixes" ;;
+              chore) printf -- "- %s\n" "$text" >> "$chores" ;;
+              docs) printf -- "- %s\n" "$text" >> "$docs" ;;
+              perf) printf -- "- %s\n" "$text" >> "$perf" ;;
+              refactor) printf -- "- %s\n" "$text" >> "$refactor" ;;
+              build|ci) printf -- "- %s\n" "$text" >> "$build_ci" ;;
+              test) printf -- "- %s\n" "$text" >> "$tests" ;;
+              *) printf -- "- %s\n" "$text" >> "$other" ;;
+            esac
+          done < <(git log --format=%s --no-merges "$RANGE")
+
+          changelog="release-artifacts/CHANGELOG.md"
+          {
+            if [ -n "$PREVIOUS_TAG" ]; then
+              echo "Changes since ${PREVIOUS_TAG}."
+            else
+              echo "Initial release."
+            fi
+            echo
+
+            if [ -s "$breaking" ]; then
+              echo "### Breaking Changes"
+              cat "$breaking"
+              echo
+            fi
+            if [ -s "$features" ]; then
+              echo "### Features"
+              cat "$features"
+              echo
+            fi
+            if [ -s "$fixes" ]; then
+              echo "### Bug Fixes"
+              cat "$fixes"
+              echo
+            fi
+            if [ -s "$chores" ]; then
+              echo "### Chores"
+              cat "$chores"
+              echo
+            fi
+            if [ -s "$docs" ]; then
+              echo "### Documentation"
+              cat "$docs"
+              echo
+            fi
+            if [ -s "$perf" ]; then
+              echo "### Performance"
+              cat "$perf"
+              echo
+            fi
+            if [ -s "$refactor" ]; then
+              echo "### Refactoring"
+              cat "$refactor"
+              echo
+            fi
+            if [ -s "$build_ci" ]; then
+              echo "### Build & CI"
+              cat "$build_ci"
+              echo
+            fi
+            if [ -s "$tests" ]; then
+              echo "### Tests"
+              cat "$tests"
+              echo
+            fi
+            if [ -s "$other" ]; then
+              echo "### Other Changes"
+              cat "$other"
+              echo
+            fi
+          } > "$changelog"
+
+          cat "$changelog"
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,12 +200,12 @@ jobs:
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" \
               --title "Release $RELEASE_TAG" \
-              --notes "See README.md for requirements, safety notes, and credits."
+              --notes-file release-artifacts/CHANGELOG.md
           else
             gh release create "$RELEASE_TAG" \
               --title "Release $RELEASE_TAG" \
-              --notes "See README.md for requirements, safety notes, and credits." \
-              --target "$GITHUB_SHA"
+              --notes-file release-artifacts/CHANGELOG.md \
+              --target "$RELEASE_TARGET_SHA"
           fi
 
       - name: Upload release assets
