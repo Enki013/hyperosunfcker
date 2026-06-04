@@ -76,11 +76,11 @@ jobs:
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" \
-              --title "HyperOSUnf*cker $RELEASE_TAG" \
+              --title "Release $RELEASE_TAG" \
               --notes "See README.md for requirements, safety notes, and credits."
           else
             gh release create "$RELEASE_TAG" \
-              --title "HyperOSUnf*cker $RELEASE_TAG" \
+              --title "Release $RELEASE_TAG" \
               --notes "See README.md for requirements, safety notes, and credits." \
               --target "$GITHUB_SHA"
           fi
