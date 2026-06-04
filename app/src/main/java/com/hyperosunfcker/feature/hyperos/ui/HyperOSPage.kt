@@ -68,12 +68,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hyperosunfcker.R
 import com.hyperosunfcker.feature.hyperos.preset.HyperOSNamedPreset
 import com.hyperosunfcker.feature.hyperos.preset.HyperOSPreset
 import com.hyperosunfcker.feature.hyperos.preset.HyperOSSnapshotManager
@@ -98,16 +100,32 @@ fun HyperOSPage(
     var showPresetMenu by remember { mutableStateOf(false) }
     var showNamedPresetPage by remember { mutableStateOf(false) }
     val controlsEnabled = !uiState.isRunning && !uiState.isLoadingState
+    val deviceStateRefreshedMessage = stringResource(R.string.hyperos_device_state_refreshed)
+    val readDeviceStateErrorMessage = stringResource(R.string.hyperos_read_device_state_error)
+    val commandFailedUnknownMessage = stringResource(R.string.hyperos_command_failed_unknown)
+    val presetSavedMessage = stringResource(R.string.hyperos_preset_saved)
+    val presetSaveErrorMessage = stringResource(R.string.hyperos_preset_save_error)
 
     LaunchedEffect(uiState.lastActionErrorMessage) {
         uiState.lastActionErrorMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            val localizedMessage = when (message) {
+                "Could not read current device state" -> readDeviceStateErrorMessage
+                "Command failed for an unknown reason" -> commandFailedUnknownMessage
+                "Could not save preset" -> presetSaveErrorMessage
+                else -> message
+            }
+            Toast.makeText(context, localizedMessage, Toast.LENGTH_LONG).show()
         }
     }
 
     LaunchedEffect(uiState.lastInfoMessage) {
         uiState.lastInfoMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            val localizedMessage = when (message) {
+                "Device state refreshed" -> deviceStateRefreshedMessage
+                "Preset saved" -> presetSavedMessage
+                else -> message
+            }
+            Toast.makeText(context, localizedMessage, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -155,13 +173,13 @@ fun HyperOSPage(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
-                title = { Text("HyperOS Optimization") },
+                title = { Text(stringResource(R.string.hyperos_optimization)) },
                 navigationIcon = {
                     if (showBackButton) {
                         IconClickButton(
                             onClick = onNavigateBack,
                             icon = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -169,7 +187,7 @@ fun HyperOSPage(
                     IconClickButton(
                         onClick = { showPresetMenu = !showPresetMenu },
                         icon = Icons.Default.MoreVert,
-                        contentDescription = "Presets"
+                        contentDescription = stringResource(R.string.presets)
                     )
                     HyperOSPresetMenu(
                         showMenu = showPresetMenu,
@@ -201,14 +219,14 @@ fun HyperOSPage(
 
             // --- Visual & Display ---
             Text(
-                text = "Display",
+                text = stringResource(R.string.hyperos_display),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
             SettingsItem(
-                title = "Force 120Hz Everywhere",
-                description = "Bypasses system restrictions to lock refresh rate to 120Hz for all apps.",
+                title = stringResource(R.string.hyperos_force_120hz),
+                description = stringResource(R.string.hyperos_force_120hz_description),
                 icon = Icons.Default.DisplaySettings,
                 isSwitch = true,
                 checked = uiState.is120HzForced,
@@ -216,8 +234,8 @@ fun HyperOSPage(
                 onCheckedChange = { runWithShizukuCheck { viewModel.toggle120Hz(it) } }
             )
             SettingsItem(
-                title = "Stacked Recent Apps",
-                description = "Writes global task_stack_view_layout_style 2 for supported System Launcher and POCO Launcher builds. Turning it off deletes the global setting.",
+                title = stringResource(R.string.hyperos_stacked_recent_apps),
+                description = stringResource(R.string.hyperos_stacked_recent_apps_description),
                 icon = Icons.Default.DisplaySettings,
                 isSwitch = true,
                 checked = uiState.isStackedRecentsEnabled,
@@ -226,8 +244,8 @@ fun HyperOSPage(
             )
 
             SettingsItem(
-                title = "Open Hidden Performance Menu",
-                description = "Launches com.android.settings.fuelgauge.PowerModeSettings when the activity exists on the device.",
+                title = stringResource(R.string.hyperos_open_hidden_performance_menu),
+                description = stringResource(R.string.hyperos_open_hidden_performance_menu_description),
                 icon = Icons.Default.Settings,
                 enabled = controlsEnabled,
                 onClick = { runWithShizukuCheck { viewModel.openHiddenPerformanceMenu() } }
@@ -235,14 +253,14 @@ fun HyperOSPage(
 
             // --- Performance Levels ---
             Text(
-                text = "Performance Levels",
+                text = stringResource(R.string.hyperos_performance_levels),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
             LevelSelector(
-                title = "CPU Computility Level",
-                description = "Sets persist.sys.computility.cpulevel. 0 = stock/off, 1-2 = light boost, 3 = balanced, 4-5 = high, 6 = maximum CPU performance tier on supported HyperOS builds.",
+                title = stringResource(R.string.hyperos_cpu_computility_level),
+                description = stringResource(R.string.hyperos_cpu_computility_level_description),
                 currentValue = uiState.cpuLevel,
                 options = listOf(
                     LevelOption("0", 0),
@@ -257,8 +275,8 @@ fun HyperOSPage(
                 onSelect = { level -> runWithShizukuCheck { viewModel.setCpuLevel(level ?: 0) } }
             )
             LevelSelector(
-                title = "GPU Computility Level",
-                description = "Sets persist.sys.computility.gpulevel. 0 = stock/off, 1-2 = light graphics boost, 3 = balanced, 4-5 = high, 6 = maximum GPU/UI animation tier on supported HyperOS builds.",
+                title = stringResource(R.string.hyperos_gpu_computility_level),
+                description = stringResource(R.string.hyperos_gpu_computility_level_description),
                 currentValue = uiState.gpuLevel,
                 options = listOf(
                     LevelOption("0", 0),
@@ -275,14 +293,14 @@ fun HyperOSPage(
 
             // --- Memory & RAM ---
             Text(
-                text = "Memory & Multitasking",
+                text = stringResource(R.string.hyperos_memory_multitasking),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
             SettingsItem(
-                title = "Restrict PowerKeeper (AppOps)",
-                description = "Revokes WRITE_SETTINGS and RUN_IN_BACKGROUND for com.miui.powerkeeper. Completely stops the aggressive killing of background apps.",
+                title = stringResource(R.string.hyperos_restrict_powerkeeper),
+                description = stringResource(R.string.hyperos_restrict_powerkeeper_description),
                 icon = Icons.Default.Memory,
                 isSwitch = true,
                 checked = uiState.isPowerKeeperRestricted,
@@ -290,11 +308,11 @@ fun HyperOSPage(
                 onCheckedChange = { runWithShizukuCheck { viewModel.togglePowerKeeper(it) } }
             )
             LevelSelector(
-                title = "Phantom Process Limit",
-                description = "Modifies device_config activity_manager max_phantom_processes. Higher limits help heavy multitasking, terminal sessions, and emulators stay alive.",
+                title = stringResource(R.string.hyperos_phantom_process_limit),
+                description = stringResource(R.string.hyperos_phantom_process_limit_description),
                 currentValue = uiState.phantomProcessLimit.takeIf { it > 32 },
                 options = listOf(
-                    LevelOption("Default", null),
+                    LevelOption(stringResource(R.string.default_option), null),
                     LevelOption("128", 128),
                     LevelOption("512", 512),
                     LevelOption("1024", 1024)
@@ -304,14 +322,14 @@ fun HyperOSPage(
             )
             // --- Battery & Standby ---
             Text(
-                text = "Battery & Standby (Wakelock Fixes)",
+                text = stringResource(R.string.hyperos_battery_standby),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
             SettingsItem(
-                title = "Optimize Doze Whitelist",
-                description = "Removes Facebook and network-heavy services from Doze exemption to fix severe idle discharge (battery drain when screen is off).",
+                title = stringResource(R.string.hyperos_optimize_doze_whitelist),
+                description = stringResource(R.string.hyperos_optimize_doze_whitelist_description),
                 icon = Icons.Default.BatteryChargingFull,
                 isSwitch = true,
                 checked = uiState.isDozeWhitelistOptimized,
@@ -319,8 +337,8 @@ fun HyperOSPage(
                 onCheckedChange = { runWithShizukuCheck { viewModel.toggleDozeWhitelist(it) } }
             )
             SettingsItem(
-                title = "Restrict GMS Standby",
-                description = "Sets Google Play Services to rare standby bucket to prevent constant awakening loops (wakelocks).",
+                title = stringResource(R.string.hyperos_restrict_gms_standby),
+                description = stringResource(R.string.hyperos_restrict_gms_standby_description),
                 icon = Icons.Default.Security,
                 isSwitch = true,
                 checked = uiState.isGmsStandbyRestricted,
@@ -328,21 +346,21 @@ fun HyperOSPage(
                 onCheckedChange = { runWithShizukuCheck { viewModel.toggleGmsStandby(it) } }
             )
             SettingsItem(
-                title = "VoLTE Carrier Check Code",
-                description = "UI-only helper from the notes: dial *#*#86583#*#* in the Phone app to toggle carrier VoLTE checks.",
+                title = stringResource(R.string.hyperos_volte_carrier_check_code),
+                description = stringResource(R.string.hyperos_volte_carrier_check_code_description),
                 icon = Icons.Default.Settings
             )
             
             // --- Debloat ---
             Text(
-                text = "Telemetry",
+                text = stringResource(R.string.hyperos_telemetry),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
             SettingsItem(
-                title = "Freeze Telemetry & Ads",
-                description = "Disables background analytic daemons (msa.global and miui.daemon) to protect privacy and save resources.",
+                title = stringResource(R.string.hyperos_freeze_telemetry_ads),
+                description = stringResource(R.string.hyperos_freeze_telemetry_ads_description),
                 icon = Icons.Default.Security,
                 isSwitch = true,
                 checked = uiState.isTelemetryFrozen,
@@ -365,16 +383,16 @@ fun HyperOSPage(
                             }
                     ) {
                         Text(
-                            text = "Experimental Visual Tweaks",
+                            text = stringResource(R.string.hyperos_experimental_visual_tweaks),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = if (showExperimentalVisualTweaks) {
-                                "Tap to collapse. These options are experimental and hidden by default."
+                                stringResource(R.string.hyperos_experimental_visual_tweaks_collapse)
                             } else {
-                                "Hidden by default. Tap to expand advanced visual flags."
+                                stringResource(R.string.hyperos_experimental_visual_tweaks_expand)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -384,7 +402,7 @@ fun HyperOSPage(
                     if (showExperimentalVisualTweaks) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Experimental: these texture, blur, corner, and shadow flags can cause visual glitches, missing effects, lag, launcher issues, or no visible change on some HyperOS builds. They are not included in presets. Enable only one option at a time if you are testing.",
+                            text = stringResource(R.string.hyperos_experimental_visual_tweaks_warning),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -397,11 +415,11 @@ fun HyperOSPage(
                             },
                             enabled = controlsEnabled
                         ) {
-                            Text("Open Visual Tweaks Guide")
+                            Text(stringResource(R.string.hyperos_open_visual_tweaks_guide))
                         }
                         SettingsItem(
-                            title = "Control Center Blur (Glassy Blur)",
-                            description = "Triggers service call miui.mqsas.IMQSNative 21 to enable advanced transparency (blur) across the Control Center and folders.",
+                            title = stringResource(R.string.hyperos_control_center_blur),
+                            description = stringResource(R.string.hyperos_control_center_blur_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isBlurEnabled,
@@ -409,11 +427,11 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleBlur(it) } }
                         )
                         LevelSelector(
-                            title = "Advanced Visual Release",
-                            description = "Sets persist.sys.advanced_visual_release. Higher values target newer HyperOS visual stacks and may be ignored or unstable on unsupported builds.",
+                            title = stringResource(R.string.hyperos_advanced_visual_release),
+                            description = stringResource(R.string.hyperos_advanced_visual_release_description),
                             currentValue = uiState.advancedVisualRelease,
                             options = listOf(
-                                LevelOption("Off", 0),
+                                LevelOption(stringResource(R.string.off), 0),
                                 LevelOption("HyperOS 2", 3),
                                 LevelOption("HyperOS 3", 4)
                             ),
@@ -421,8 +439,8 @@ fun HyperOSPage(
                             onSelect = { level -> runWithShizukuCheck { viewModel.setAdvancedVisualRelease(level ?: 0) } }
                         )
                         SettingsItem(
-                            title = "View Smooth Corners",
-                            description = "Sets persist.sys.support_view_smoothcorner. Improves rounded corner rendering for supported HyperOS UI views.",
+                            title = stringResource(R.string.hyperos_view_smooth_corners),
+                            description = stringResource(R.string.hyperos_view_smooth_corners_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isViewSmoothCornerEnabled,
@@ -430,8 +448,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleViewSmoothCorner(it) } }
                         )
                         SettingsItem(
-                            title = "Window Smooth Corners",
-                            description = "Sets persist.sys.support_window_smoothcorner. Applies smoother rounded corners to system windows where the ROM supports it.",
+                            title = stringResource(R.string.hyperos_window_smooth_corners),
+                            description = stringResource(R.string.hyperos_window_smooth_corners_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isWindowSmoothCornerEnabled,
@@ -439,8 +457,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleWindowSmoothCorner(it) } }
                         )
                         SettingsItem(
-                            title = "MI Shadow Renderer",
-                            description = "Writes persist.sys.mi_shadow_supported to enable richer HyperOS interface shadows.",
+                            title = stringResource(R.string.hyperos_mi_shadow_renderer),
+                            description = stringResource(R.string.hyperos_mi_shadow_renderer_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isMiShadowEnabled,
@@ -448,8 +466,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleMiShadow(it) } }
                         )
                         SettingsItem(
-                            title = "Default Blur Status",
-                            description = "Sets persist.sys.background_blur_status_default. Makes supported blur surfaces default to enabled.",
+                            title = stringResource(R.string.hyperos_default_blur_status),
+                            description = stringResource(R.string.hyperos_default_blur_status_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isDefaultBlurStatusEnabled,
@@ -457,8 +475,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleDefaultBlurStatus(it) } }
                         )
                         SettingsItem(
-                            title = "Blur Noise",
-                            description = "Sets persist.sys.add_blurnoise_supported. Adds the noise/glass texture layer used by some HyperOS blur effects.",
+                            title = stringResource(R.string.hyperos_blur_noise),
+                            description = stringResource(R.string.hyperos_blur_noise_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isBlurNoiseEnabled,
@@ -466,8 +484,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleBlurNoise(it) } }
                         )
                         SettingsItem(
-                            title = "Enhanced Device Level List",
-                            description = "Writes deviceLevelList v:1,c:3,g:3. Can unlock folder blur, lock-screen visual animation, and launcher visual tiers.",
+                            title = stringResource(R.string.hyperos_enhanced_device_level_list),
+                            description = stringResource(R.string.hyperos_enhanced_device_level_list_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isEnhancedDeviceLevelListEnabled,
@@ -475,8 +493,8 @@ fun HyperOSPage(
                             onCheckedChange = { runWithShizukuCheck { viewModel.toggleEnhancedDeviceLevelList(it) } }
                         )
                         SettingsItem(
-                            title = "Linkage State",
-                            description = "Writes secure linkage_state 1. Reddit guide pairs it with the advanced texture stack on supported HyperOS builds.",
+                            title = stringResource(R.string.hyperos_linkage_state),
+                            description = stringResource(R.string.hyperos_linkage_state_description),
                             icon = Icons.Default.Wallpaper,
                             isSwitch = true,
                             checked = uiState.isLinkageStateEnabled,
@@ -506,7 +524,7 @@ private fun HyperOSPresetMenu(
         onDismissRequest = onDismiss
     ) {
         DropdownMenuItem(
-            text = { Text("Max Perf") },
+            text = { Text(stringResource(R.string.hyperos_preset_max_perf)) },
             enabled = controlsEnabled,
             onClick = {
                 onApplyPreset(HyperOSPreset.PERFORMANCE)
@@ -514,7 +532,7 @@ private fun HyperOSPresetMenu(
             }
         )
         DropdownMenuItem(
-            text = { Text("Balanced") },
+            text = { Text(stringResource(R.string.hyperos_preset_balanced)) },
             enabled = controlsEnabled,
             onClick = {
                 onApplyPreset(HyperOSPreset.BALANCED)
@@ -522,7 +540,7 @@ private fun HyperOSPresetMenu(
             }
         )
         DropdownMenuItem(
-            text = { Text("Gaming") },
+            text = { Text(stringResource(R.string.hyperos_preset_gaming)) },
             enabled = controlsEnabled,
             onClick = {
                 onApplyPreset(HyperOSPreset.GAMING)
@@ -530,7 +548,7 @@ private fun HyperOSPresetMenu(
             }
         )
         DropdownMenuItem(
-            text = { Text("Battery") },
+            text = { Text(stringResource(R.string.hyperos_preset_battery)) },
             enabled = controlsEnabled,
             onClick = {
                 onApplyPreset(HyperOSPreset.BATTERY)
@@ -538,7 +556,7 @@ private fun HyperOSPresetMenu(
             }
         )
         DropdownMenuItem(
-            text = { Text("Stock (Revert)") },
+            text = { Text(stringResource(R.string.hyperos_preset_stock_revert)) },
             enabled = controlsEnabled,
             onClick = {
                 onApplyPreset(HyperOSPreset.STOCK)
@@ -547,7 +565,7 @@ private fun HyperOSPresetMenu(
         )
         HorizontalDivider()
         DropdownMenuItem(
-            text = { Text("HyperOS Presets") },
+            text = { Text(stringResource(R.string.hyperos_presets)) },
             onClick = {
                 onOpenNamedPresets()
                 onDismiss()
@@ -568,6 +586,10 @@ private fun HyperOSNamedPresetsPage(
     var presets by remember { mutableStateOf(HyperOSSnapshotManager.loadPresets(context)) }
     var editingPreset by remember { mutableStateOf<HyperOSNamedPreset?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    val presetDeletedMessage = stringResource(R.string.preset_deleted)
+    val presetDeleteErrorMessage = stringResource(R.string.preset_delete_error)
+    val presetUpdatedMessage = stringResource(R.string.hyperos_preset_updated)
+    val presetUpdateErrorMessage = stringResource(R.string.hyperos_preset_update_error)
 
     val refreshPresets = {
         presets = HyperOSSnapshotManager.loadPresets(context)
@@ -577,13 +599,13 @@ private fun HyperOSNamedPresetsPage(
         topBar = {
             ScreenTopBar(
                 onNavigateBack = onNavigateBack,
-                title = { Text("HyperOS Presets") }
+                title = { Text(stringResource(R.string.hyperos_presets)) }
             )
         },
         floatingActionButton = {
             if (presets.isNotEmpty()) {
                 FloatingActionButton(onClick = { showCreateDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Create preset")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_preset))
                 }
             }
         }
@@ -613,9 +635,9 @@ private fun HyperOSNamedPresetsPage(
                         onDelete = {
                             if (HyperOSSnapshotManager.deletePreset(context, preset)) {
                                 refreshPresets()
-                                Toast.makeText(context, "Preset deleted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, presetDeletedMessage, Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "Could not delete preset", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, presetDeleteErrorMessage, Toast.LENGTH_SHORT).show()
                             }
                         }
                     )
@@ -626,7 +648,7 @@ private fun HyperOSNamedPresetsPage(
 
     if (showCreateDialog) {
         HyperOSPresetEditDialog(
-            title = "Create Preset",
+            title = stringResource(R.string.create_preset),
             initialName = "",
             initialDescription = "",
             onDismiss = { showCreateDialog = false },
@@ -645,7 +667,7 @@ private fun HyperOSNamedPresetsPage(
 
     editingPreset?.let { preset ->
         HyperOSPresetEditDialog(
-            title = "Edit Preset",
+            title = stringResource(R.string.hyperos_edit_preset),
             initialName = preset.name,
             initialDescription = preset.description,
             onDismiss = { editingPreset = null },
@@ -653,9 +675,9 @@ private fun HyperOSNamedPresetsPage(
                 if (HyperOSSnapshotManager.updatePreset(context, preset, name, description)) {
                     refreshPresets()
                     editingPreset = null
-                    Toast.makeText(context, "Preset updated", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, presetUpdatedMessage, Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Could not update preset", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, presetUpdateErrorMessage, Toast.LENGTH_SHORT).show()
                 }
             }
         )
@@ -679,7 +701,7 @@ private fun HyperOSEmptyPresetsState(onCreateClick: () -> Unit) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "HyperOS Presets",
+                    contentDescription = stringResource(R.string.hyperos_presets),
                     modifier = Modifier.size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -688,13 +710,13 @@ private fun HyperOSEmptyPresetsState(onCreateClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "No HyperOS Presets",
+            text = stringResource(R.string.hyperos_no_presets),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Save the current HyperOS tuning state as a named preset and apply it later.",
+            text = stringResource(R.string.hyperos_no_presets_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
@@ -702,9 +724,9 @@ private fun HyperOSEmptyPresetsState(onCreateClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = onCreateClick, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Default.Add, contentDescription = "Create preset")
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_preset))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Create Preset")
+            Text(stringResource(R.string.create_preset))
         }
     }
 }
@@ -752,13 +774,13 @@ private fun HyperOSPresetCard(
                     ) {
                         Icon(
                             Icons.Default.Settings,
-                            contentDescription = "Captured settings",
+                            contentDescription = stringResource(R.string.hyperos_captured_settings),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "18 settings",
+                            text = stringResource(R.string.hyperos_settings_count, 18),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -783,24 +805,24 @@ private fun HyperOSPresetCard(
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
                             Icons.Default.MoreVert,
-                            contentDescription = "More options",
+                            contentDescription = stringResource(R.string.more_options),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Edit") },
+                            text = { Text(stringResource(R.string.edit)) },
                             onClick = {
                                 showMenu = false
                                 onEdit()
                             },
                             leadingIcon = {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                             }
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("Delete") },
+                            text = { Text(stringResource(R.string.delete)) },
                             onClick = {
                                 showMenu = false
                                 onDelete()
@@ -808,7 +830,7 @@ private fun HyperOSPresetCard(
                             leadingIcon = {
                                 Icon(
                                     Icons.Default.Delete,
-                                    contentDescription = "Delete",
+                                    contentDescription = stringResource(R.string.delete),
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             },
@@ -831,11 +853,11 @@ private fun HyperOSPresetCard(
             ) {
                 Icon(
                     Icons.Default.PlayArrow,
-                    contentDescription = "Apply preset",
+                    contentDescription = stringResource(R.string.apply_preset),
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Apply Preset")
+                Text(stringResource(R.string.apply_preset))
             }
         }
     }
@@ -865,7 +887,7 @@ private fun HyperOSPresetEditDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    text = "Name this HyperOS tuning preset. The current device state will be captured when you save.",
+                    text = stringResource(R.string.hyperos_preset_edit_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -875,11 +897,11 @@ private fun HyperOSPresetEditDialog(
                         name = it
                         nameError = it.isBlank()
                     },
-                    label = { Text("Preset name") },
-                    placeholder = { Text("Gaming daily") },
+                    label = { Text(stringResource(R.string.preset_name)) },
+                    placeholder = { Text(stringResource(R.string.hyperos_preset_name_placeholder)) },
                     isError = nameError,
                     supportingText = if (nameError) {
-                        { Text("Preset name is required") }
+                        { Text(stringResource(R.string.preset_name_missing_error)) }
                     } else {
                         null
                     },
@@ -889,8 +911,8 @@ private fun HyperOSPresetEditDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Optional description") },
-                    placeholder = { Text("What this preset is for") },
+                    label = { Text(stringResource(R.string.optional_description)) },
+                    placeholder = { Text(stringResource(R.string.hyperos_preset_description_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
@@ -907,12 +929,12 @@ private fun HyperOSPresetEditDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -939,7 +961,7 @@ private fun LevelSelector(
     ) {
         var expanded by remember { mutableStateOf(false) }
         val selectedOption = options.firstOrNull { it.value == currentValue }
-        val selectedLabel = selectedOption?.label ?: currentValue?.toString() ?: "Default"
+        val selectedLabel = selectedOption?.label ?: currentValue?.toString() ?: stringResource(R.string.default_option)
 
         Text(
             text = title,
@@ -960,7 +982,7 @@ private fun LevelSelector(
                     .height(44.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("Selected: $selectedLabel")
+                Text(stringResource(R.string.hyperos_selected_value, selectedLabel))
             }
             DropdownMenu(
                 expanded = expanded,
@@ -968,7 +990,7 @@ private fun LevelSelector(
             ) {
                 options.forEach { option ->
                     val itemLabel = if (option.value == currentValue) {
-                        "${option.label} • current"
+                        stringResource(R.string.hyperos_current_option, option.label)
                     } else {
                         option.label
                     }

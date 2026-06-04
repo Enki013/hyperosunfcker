@@ -108,10 +108,10 @@ fun HyperOSUnfckerApp(
     var versionTapCounter by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     val bottomNavItems = listOf(
-        BottomNavItem(Screen.HyperOS.route, "Optimize", Icons.Default.Tune),
-        BottomNavItem(Screen.Main.route, "Debloat", Icons.Default.Apps),
-        BottomNavItem(Screen.Logs.route, "Logs", Icons.AutoMirrored.Filled.Article),
-        BottomNavItem(Screen.Settings.route, "Settings", Icons.Default.Settings),
+        BottomNavItem(Screen.HyperOS.route, stringResource(R.string.optimize), Icons.Default.Tune),
+        BottomNavItem(Screen.Main.route, stringResource(R.string.debloat), Icons.Default.Apps),
+        BottomNavItem(Screen.Logs.route, stringResource(R.string.logs), Icons.AutoMirrored.Filled.Article),
+        BottomNavItem(Screen.Settings.route, stringResource(R.string.settings), Icons.Default.Settings),
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -308,7 +308,7 @@ private fun MainContent(
                 openBadgesInfoDialog = { showExplainBadgeDialog = true },
                 navigateToPage = navigateToPage,
                 appListViewModel = appListViewModel,
-                title = "Debloat",
+                title = stringResource(R.string.debloat),
             )
 
             if (showExplainBadgeDialog) {
