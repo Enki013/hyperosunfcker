@@ -58,6 +58,16 @@ Every toggle or level change in the app issues one or more `adb shell` commands 
 
 ## Screens
 
+These are live in-app screenshots captured from the Android emulator.
+
+<p align="center">
+  <img src="docs/screenshots/01-hyperos-optimization.png" alt="HyperOS optimization screen" width="220">
+  <img src="docs/screenshots/02-debloat.png" alt="Debloat screen" width="220">
+  <img src="docs/screenshots/03-logs.png" alt="Logs screen" width="220">
+  <img src="docs/screenshots/04-settings.png" alt="Settings screen" width="220">
+  <img src="docs/screenshots/05-hyperos-presets.png" alt="HyperOS presets menu" width="220">
+</p>
+
 ### HyperOS Optimization Screen
 
 The main tuning page. Contains all toggles and level selectors organized into sections. Pull down to refresh and re-read the current device state. Tap the **⋮** menu in the top-right corner to apply a Quick Preset.
