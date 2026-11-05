@@ -180,7 +180,9 @@ Displays a reminder to dial `*#*#86583#*#*` in the Phone app to toggle carrier-e
 #### Freeze Telemetry & Ads
 Disables `com.miui.msa.global` (MIUI ad service) and `com.miui.daemon` (analytics daemon) using `pm disable-user --user 0`. These background processes collect usage analytics, serve MIUI ads in the system UI, and consume RAM and CPU even when not actively used. Disabling them improves privacy and frees resources.
 
-> Turning this off re-enables both packages with `pm enable`.
+Some HyperOS builds refuse to disable these packages (`SecurityException: Cannot disable system packages`). In that case the app uninstalls them for the current user instead with `pm uninstall -k --user 0`. Packages already removed from the **Debloat** tab also count as frozen.
+
+> Turning this off restores both packages with `pm install-existing --user 0` (if they were uninstalled) and `pm enable --user 0` (if they were disabled).
 
 ---
 

@@ -31,7 +31,7 @@
     <string name="hyperos_volte_carrier_check_code_description">UI-only helper from the notes: dial *#*#86583#*#* in the Phone app to toggle carrier VoLTE checks.</string>
     <string name="hyperos_telemetry">Telemetry</string>
     <string name="hyperos_freeze_telemetry_ads">Freeze Telemetry &amp; Ads</string>
-    <string name="hyperos_freeze_telemetry_ads_description">Disables background analytic daemons (msa.global and miui.daemon) to protect privacy and save resources.</string>
+    <string name="hyperos_freeze_telemetry_ads_description">Disables background analytic daemons (msa.global and miui.daemon) to protect privacy and save resources. If HyperOS blocks disabling them, they are uninstalled for the current user instead; turning this off restores them.</string>
     <string name="hyperos_experimental_visual_tweaks">Experimental Visual Tweaks</string>
     <string name="hyperos_experimental_visual_tweaks_collapse">Tap to collapse. These options are experimental and hidden by default.</string>
     <string name="hyperos_experimental_visual_tweaks_expand">Hidden by default. Tap to expand advanced visual flags.</string>

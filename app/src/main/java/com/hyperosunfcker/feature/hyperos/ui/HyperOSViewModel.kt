@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
 
 class HyperOSViewModel : ViewModel() {
 
@@ -110,8 +111,19 @@ class HyperOSViewModel : ViewModel() {
             val errorMessage = if (success) null else {
                 HyperOSCommandUtils.lastFailureMessage ?: "Command failed for an unknown reason"
             }
+            // A failed action may still have applied some of its steps (presets run many
+            // commands), so show what the device has now rather than the state from before.
+            val stateAfterFailure = if (!success && Shizuku.pingBinder()) {
+                runCatching { readDeviceState() }.getOrNull()
+            } else {
+                null
+            }
             _uiState.update { currentState ->
-                val finalState = if (success) currentState else previousState
+                val finalState = when {
+                    success -> currentState
+                    stateAfterFailure != null -> stateAfterFailure.copy(isDeviceStateLoaded = true)
+                    else -> previousState
+                }
                 finalState.copy(
                     isRunning = false,
                     lastActionSucceeded = success,

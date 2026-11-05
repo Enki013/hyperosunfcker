@@ -1,10 +1,13 @@
 package com.hyperosunfcker.feature.hyperos.state
 
 import com.hyperosunfcker.feature.hyperos.commands.HyperOSCommandUtils
+import com.hyperosunfcker.util.LogUtils
 
 object HyperOSStateEngine {
+    private const val TAG = "HyperOSStateEngine"
     private const val MQSAS_LOG_PATH = "/storage/emulated/0/log.txt"
     private const val USER_ID = 0
+    private val TELEMETRY_PACKAGES = listOf("com.miui.msa.global", "com.miui.daemon")
     private val DOZE_PACKAGES = listOf("com.facebook.services", "com.facebook.appmanager")
     private val GMS_STANDBY_PACKAGES = listOf("com.google.android.gms", "com.google.android.gsf")
     private val POWER_KEEPER_OPS =
@@ -301,21 +304,85 @@ object HyperOSStateEngine {
 
     // --- Debloat Module ---
 
+    /**
+     * Package names from `pm list packages`. [flag] is "" for installed packages,
+     * "-d" for disabled ones and "-u" to also include packages uninstalled for the user.
+     */
+    private fun listPackages(flag: String = ""): Set<String>? {
+        val command = listOf("pm list packages", flag, "--user $USER_ID")
+            .filter { it.isNotEmpty() }
+            .joinToString(" ")
+        return readShell(command)
+            ?.lineSequence()
+            ?.map { it.trim().removePrefix("package:") }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+    }
+
+    // A telemetry package counts as frozen when it is disabled or uninstalled for the user.
     fun isTelemetryFrozen(): Boolean {
-        // pm list packages -d shows disabled packages
-        val output = readShell("pm list packages -d --user 0")
-        return output?.contains("com.miui.msa.global") == true && output.contains("com.miui.daemon")
+        val installed = listPackages() ?: return false
+        val disabled = listPackages("-d") ?: return false
+        return TELEMETRY_PACKAGES.all { it !in installed || it in disabled }
     }
 
     fun setTelemetryFrozen(frozen: Boolean): Boolean {
-        if (frozen) {
-            return listOf("com.miui.msa.global", "com.miui.daemon").all { packageName ->
-                runShell("pm disable-user --user 0 $packageName")
+        val installed = listPackages() ?: return false
+        val disabled = listPackages("-d") ?: return false
+        val known = if (frozen) emptySet() else listPackages("-u") ?: return false
+
+        // Handle every package even if an earlier one fails.
+        return TELEMETRY_PACKAGES.map { packageName ->
+            if (frozen) {
+                freezePackage(packageName, installed, disabled)
+            } else {
+                unfreezePackage(packageName, installed, disabled, known)
             }
+        }.all { it }
+    }
+
+    private fun freezePackage(
+        packageName: String,
+        installed: Set<String>,
+        disabled: Set<String>
+    ): Boolean {
+        if (packageName !in installed || packageName in disabled) {
+            return true
         }
 
-        return listOf("com.miui.msa.global", "com.miui.daemon").all { packageName ->
-            runShell("pm enable $packageName")
+        val disableResult = HyperOSCommandUtils.execute("pm disable-user --user $USER_ID $packageName")
+        if (disableResult.success) {
+            return true
         }
+
+        // HyperOS refuses to disable some system packages ("Cannot disable system packages")
+        // but still lets them be uninstalled for the current user, which install-existing undoes.
+        if (!disableResult.stderr.contains("Cannot disable")) {
+            return false
+        }
+        LogUtils.i(TAG, "HyperOS blocked disabling $packageName; uninstalling it for user $USER_ID instead")
+        return runShell("pm uninstall -k --user $USER_ID $packageName") ||
+            runShell("pm uninstall --user $USER_ID $packageName")
+    }
+
+    private fun unfreezePackage(
+        packageName: String,
+        installed: Set<String>,
+        disabled: Set<String>,
+        known: Set<String>
+    ): Boolean {
+        if (packageName !in known) {
+            // Not on this device at all, so there is nothing to restore.
+            return true
+        }
+        if (packageName !in installed &&
+            !runShell("pm install-existing --user $USER_ID $packageName")
+        ) {
+            return false
+        }
+        if (packageName in disabled) {
+            return runShell("pm enable --user $USER_ID $packageName")
+        }
+        return true
     }
 }
