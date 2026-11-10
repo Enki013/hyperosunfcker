@@ -9,14 +9,14 @@
     <string name="hyperos_force_120hz">Force 120Hz Everywhere</string>
     <string name="hyperos_force_120hz_description">Bypasses system restrictions to lock refresh rate to 120Hz for all apps.</string>
     <string name="hyperos_stacked_recent_apps">Stacked Recent Apps</string>
-    <string name="hyperos_stacked_recent_apps_description">Writes global task_stack_view_layout_style 2 for supported System Launcher and POCO Launcher builds. Turning it off deletes the global setting.</string>
+    <string name="hyperos_stacked_recent_apps_description">Writes global task_stack_view_layout_style 2 for supported System Launcher and POCO Launcher builds. Turning it off deletes the global setting. The POCO Launcher update that ships with HyperOS 3.1 ignores this setting on some devices.</string>
     <string name="hyperos_open_hidden_performance_menu">Open Hidden Performance Menu</string>
     <string name="hyperos_open_hidden_performance_menu_description">Launches com.android.settings.fuelgauge.PowerModeSettings when the activity exists on the device.</string>
     <string name="hyperos_performance_levels">Performance Levels</string>
     <string name="hyperos_cpu_computility_level">CPU Computility Level</string>
-    <string name="hyperos_cpu_computility_level_description">Sets persist.sys.computility.cpulevel. 0 = stock/off, 1-2 = light boost, 3 = balanced, 4-5 = high, 6 = maximum CPU performance tier on supported HyperOS builds.</string>
+    <string name="hyperos_cpu_computility_level_description">Sets persist.sys.computility.cpulevel. 0 = stock/off, 1-2 = light boost, 3 = balanced, 4-5 = high, 6 = maximum CPU performance tier on supported HyperOS builds. Works on HyperOS 3.0 and earlier; HyperOS 3.1 blocks writing it without root.</string>
     <string name="hyperos_gpu_computility_level">GPU Computility Level</string>
-    <string name="hyperos_gpu_computility_level_description">Sets persist.sys.computility.gpulevel. 0 = stock/off, 1-2 = light graphics boost, 3 = balanced, 4-5 = high, 6 = maximum GPU/UI animation tier on supported HyperOS builds.</string>
+    <string name="hyperos_gpu_computility_level_description">Sets persist.sys.computility.gpulevel. 0 = stock/off, 1-2 = light graphics boost, 3 = balanced, 4-5 = high, 6 = maximum GPU/UI animation tier on supported HyperOS builds. Works on HyperOS 3.0 and earlier; HyperOS 3.1 blocks writing it without root.</string>
     <string name="hyperos_memory_multitasking">Memory &amp; Multitasking</string>
     <string name="hyperos_restrict_powerkeeper">Restrict PowerKeeper (AppOps)</string>
     <string name="hyperos_restrict_powerkeeper_description">Revokes WRITE_SETTINGS and RUN_IN_BACKGROUND for com.miui.powerkeeper. Completely stops the aggressive killing of background apps.</string>

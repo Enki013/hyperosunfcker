@@ -10,6 +10,7 @@ object HyperOSStateEngine {
     private val TELEMETRY_PACKAGES = listOf("com.miui.msa.global", "com.miui.daemon")
     private val DOZE_PACKAGES = listOf("com.facebook.services", "com.facebook.appmanager")
     private val GMS_STANDBY_PACKAGES = listOf("com.google.android.gms", "com.google.android.gsf")
+    private val LAUNCHER_PACKAGES = listOf("com.miui.home", "com.mi.android.globallauncher")
     private val POWER_KEEPER_OPS =
         listOf("WRITE_SETTINGS", "GET_USAGE_STATS", "RUN_IN_BACKGROUND")
 
@@ -30,15 +31,54 @@ object HyperOSStateEngine {
         return runShell(fallbackCommand)
     }
 
+    /**
+     * Writes a persist.sys.* property and confirms it with getprop.
+     *
+     * The IMQSNative service call exits with 0 on HyperOS 3.1 even though it no longer
+     * writes the property, so the exit code alone cannot be trusted.
+     */
     private fun setPersistentProperty(key: String, value: String): Boolean {
-        val serviceCommand =
-            """service call miui.mqsas.IMQSNative 21 i32 1 s16 "setprop" i32 1 s16 "$key $value" s16 "$MQSAS_LOG_PATH" i32 600"""
-        val serviceResult = HyperOSCommandUtils.execute(serviceCommand)
-        if (serviceResult.success) {
+        if (propertyMatches(readPersistentProperty(key), value)) {
             return true
         }
 
-        return runShell("setprop $key $value")
+        val serviceCommand =
+            """service call miui.mqsas.IMQSNative 21 i32 1 s16 "setprop" i32 1 s16 "$key $value" s16 "$MQSAS_LOG_PATH" i32 600"""
+        val serviceResult = HyperOSCommandUtils.execute(serviceCommand)
+        if (serviceResult.stdout.isNotBlank()) {
+            LogUtils.i(TAG, "IMQSNative reply for $key: ${serviceResult.stdout}")
+        }
+        if (propertyMatches(readPersistentProperty(key), value)) {
+            return true
+        }
+
+        HyperOSCommandUtils.execute("setprop $key $value")
+        val currentValue = readPersistentProperty(key)
+        if (propertyMatches(currentValue, value)) {
+            return true
+        }
+        if (currentValue == null) {
+            // getprop itself failed (for example Shizuku went away), so keep that command's
+            // error instead of blaming the HyperOS build.
+            return false
+        }
+
+        HyperOSCommandUtils.recordFailure(
+            "This HyperOS build did not accept $key=$value (still ${currentValue.ifBlank { "unset" }}). " +
+                "Xiaomi blocked writing these properties without root in HyperOS 3.1; they work on HyperOS 3.0 and earlier."
+        )
+        return false
+    }
+
+    private fun readPersistentProperty(key: String): String? {
+        return readShell("getprop $key")
+    }
+
+    // An unset property reads as "", which the app already treats as 0 / false.
+    private fun propertyMatches(current: String?, expected: String): Boolean {
+        if (current == null) return false
+        if (current.equals(expected, ignoreCase = true)) return true
+        return current.isBlank() && (expected == "0" || expected.equals("false", ignoreCase = true))
     }
 
     private fun putSetting(namespace: String, key: String, value: String): Boolean {
@@ -194,6 +234,15 @@ object HyperOSStateEngine {
     }
 
     fun setStackedRecentsEnabled(enabled: Boolean): Boolean {
+        // The setting is always stored, but newer POCO Launcher builds (HyperOS 3.1)
+        // ignore it. Log the launcher versions so bug reports show which build is in use.
+        LAUNCHER_PACKAGES.forEach { packageName ->
+            val version = readShell("dumpsys package $packageName | grep -m1 versionName= || true")
+                ?.trim()
+            if (!version.isNullOrEmpty()) {
+                LogUtils.i(TAG, "Launcher $packageName $version")
+            }
+        }
         return if (enabled) {
             putSetting("global", "task_stack_view_layout_style", "2")
         } else {

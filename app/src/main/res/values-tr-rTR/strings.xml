@@ -124,14 +124,14 @@ App recommendations use data from %s.</string>
     <string name="hyperos_force_120hz">Her Yerde 120Hz Zorla</string>
     <string name="hyperos_force_120hz_description">Yenileme hızını tüm uygulamalar için 120Hz değerine kilitlemek üzere sistem kısıtlamalarını atlar.</string>
     <string name="hyperos_stacked_recent_apps">Yığın Son Uygulamalar</string>
-    <string name="hyperos_stacked_recent_apps_description">Desteklenen System Launcher ve POCO Launcher sürümleri için global task_stack_view_layout_style değerini 2 yazar. Kapatıldığında global ayarı siler.</string>
+    <string name="hyperos_stacked_recent_apps_description">Desteklenen System Launcher ve POCO Launcher sürümleri için global task_stack_view_layout_style değerini 2 yazar. Kapatıldığında global ayarı siler. HyperOS 3.1 ile gelen POCO Launcher güncellemesi bazı cihazlarda bu ayarı yok sayar.</string>
     <string name="hyperos_open_hidden_performance_menu">Gizli Performans Menüsünü Aç</string>
     <string name="hyperos_open_hidden_performance_menu_description">Cihazda etkinlik varsa com.android.settings.fuelgauge.PowerModeSettings ekranını başlatır.</string>
     <string name="hyperos_performance_levels">Performans Seviyeleri</string>
     <string name="hyperos_cpu_computility_level">CPU Computility Seviyesi</string>
-    <string name="hyperos_cpu_computility_level_description">persist.sys.computility.cpulevel değerini ayarlar. 0 = stok/kapalı, 1-2 = hafif hızlandırma, 3 = dengeli, 4-5 = yüksek, 6 = desteklenen HyperOS sürümlerinde en yüksek CPU performans seviyesi.</string>
+    <string name="hyperos_cpu_computility_level_description">persist.sys.computility.cpulevel değerini ayarlar. 0 = stok/kapalı, 1-2 = hafif hızlandırma, 3 = dengeli, 4-5 = yüksek, 6 = desteklenen HyperOS sürümlerinde en yüksek CPU performans seviyesi. HyperOS 3.0 ve öncesinde çalışır; HyperOS 3.1 root olmadan yazılmasını engeller.</string>
     <string name="hyperos_gpu_computility_level">GPU Computility Seviyesi</string>
-    <string name="hyperos_gpu_computility_level_description">persist.sys.computility.gpulevel değerini ayarlar. 0 = stok/kapalı, 1-2 = hafif grafik hızlandırma, 3 = dengeli, 4-5 = yüksek, 6 = desteklenen HyperOS sürümlerinde en yüksek GPU/UI animasyon seviyesi.</string>
+    <string name="hyperos_gpu_computility_level_description">persist.sys.computility.gpulevel değerini ayarlar. 0 = stok/kapalı, 1-2 = hafif grafik hızlandırma, 3 = dengeli, 4-5 = yüksek, 6 = desteklenen HyperOS sürümlerinde en yüksek GPU/UI animasyon seviyesi. HyperOS 3.0 ve öncesinde çalışır; HyperOS 3.1 root olmadan yazılmasını engeller.</string>
     <string name="hyperos_memory_multitasking">Bellek ve Çoklu Görev</string>
     <string name="hyperos_restrict_powerkeeper">PowerKeeper Kısıtla (AppOps)</string>
     <string name="hyperos_restrict_powerkeeper_description">com.miui.powerkeeper için WRITE_SETTINGS ve RUN_IN_BACKGROUND izinlerini geri alır. Arka plan uygulamalarının agresif şekilde kapatılmasını tamamen durdurur.</string>

@@ -19,9 +19,17 @@ data class CommandResult(
 
 object HyperOSCommandUtils {
     private const val TAG = "HyperOSCommandUtils"
+    // Failure of the most recent command; cleared when a later command succeeds.
     @Volatile
-    var lastFailureMessage: String? = null
-        private set
+    private var lastCommandFailureMessage: String? = null
+
+    // Failure found by a check after a command (see recordFailure). It is kept until
+    // clearFailure(), so later successful commands in the same action do not hide it.
+    @Volatile
+    private var recordedFailureMessage: String? = null
+
+    val lastFailureMessage: String?
+        get() = recordedFailureMessage ?: lastCommandFailureMessage
 
     /**
      * Executes a shell command using Shizuku.
@@ -32,8 +40,16 @@ object HyperOSCommandUtils {
         return execute(command).takeIf { it.success }?.stdout
     }
 
+    /** Call before a user action so its error is not hidden by a later successful command. */
+    fun clearFailure() {
+        recordedFailureMessage = null
+        lastCommandFailureMessage = null
+    }
+
     fun recordFailure(message: String) {
-        lastFailureMessage = message
+        if (recordedFailureMessage == null) {
+            recordedFailureMessage = message
+        }
         LogUtils.w(TAG, message)
     }
 
@@ -49,7 +65,7 @@ object HyperOSCommandUtils {
             stdout = "",
             stderr = "Shizuku not available"
         )
-        lastFailureMessage = result.userVisibleFailureMessage()
+        lastCommandFailureMessage = result.userVisibleFailureMessage()
         LogUtils.w(TAG, "Shizuku not available; command was not executed.")
         return result
     }
@@ -97,10 +113,10 @@ object HyperOSCommandUtils {
                 stderr = errorOutput.toString().trim()
             )
             if (exitCode != 0) {
-                lastFailureMessage = result.userVisibleFailureMessage()
+                lastCommandFailureMessage = result.userVisibleFailureMessage()
                 LogUtils.e(TAG, "Shizuku Command failed with exit code $exitCode. Error: ${errorOutput.toString().trim()}")
             } else {
-                lastFailureMessage = null
+                lastCommandFailureMessage = null
             }
 
             return result
@@ -112,7 +128,7 @@ object HyperOSCommandUtils {
                 stdout = "",
                 stderr = e.message.orEmpty()
             )
-            lastFailureMessage = result.userVisibleFailureMessage()
+            lastCommandFailureMessage = result.userVisibleFailureMessage()
             return result
         }
     }

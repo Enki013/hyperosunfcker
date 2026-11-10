@@ -39,6 +39,7 @@ class HyperOSViewModel : ViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
+            HyperOSCommandUtils.clearFailure()
             try {
                 val loadedState = readDeviceState()
                 _uiState.update { currentState ->
@@ -107,6 +108,7 @@ class HyperOSViewModel : ViewModel() {
         )
 
         viewModelScope.launch(Dispatchers.IO) {
+            HyperOSCommandUtils.clearFailure()
             val success = action()
             val errorMessage = if (success) null else {
                 HyperOSCommandUtils.lastFailureMessage ?: "Command failed for an unknown reason"
