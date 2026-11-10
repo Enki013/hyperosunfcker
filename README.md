@@ -118,6 +118,8 @@ Sets `system/peak_refresh_rate = 120` and `system/min_refresh_rate = 0`, then en
 #### Stacked Recent Apps
 Writes `global/task_stack_view_layout_style = 2`. Changes the recent apps view to a stacked card style supported by HyperOS System Launcher and POCO Launcher builds. Turning it off deletes the setting and restores the default style.
 
+> **Note:** Works with POCO Launcher `RELEASE-6.01.05.1993` and newer. The POCO Launcher update that ships with HyperOS 3.1 ignores this setting on some devices.
+
 #### Open Hidden Performance Menu
 Launches the hidden `com.android.settings.fuelgauge.PowerModeSettings` activity using `am start`. This opens the device's built-in performance mode selector (e.g., Power Saving / Balanced / Performance) if the activity exists on your firmware. It is a one-time action with no toggle state.
 
@@ -126,6 +128,8 @@ Launches the hidden `com.android.settings.fuelgauge.PowerModeSettings` activity 
 ### Visual Capability Levels
 
 HyperOS uses a Computility system (`persist.sys.computility.cpulevel` and `gpulevel`) as a feature capability flag for the system UI and Xiaomi services. The app uses the `miui.mqsas.IMQSNative` service call to set these properties, with a `setprop` fallback.
+
+> **Note:** Works on HyperOS 3.0 and earlier. HyperOS 3.1 blocks this without root, and the app shows an error when the value does not change.
 
 **How it works:** These properties aggressively alter the system's performance governor and scaling policies. Higher values (like `6`) force the CPU cores to scale faster and keep the GPU constantly awake for real-time Gaussian blur algorithms. This tricks the system into unlocking flagship-tier visual features: advanced textures, live blur, premium parallel animations, and seamless HyperIsland integration.
 
@@ -192,6 +196,8 @@ Some HyperOS builds refuse to disable these packages (`SecurityException: Cannot
 
 Tap **"Open Visual Tweaks Guide"** inside the card for the full community Reddit guide these options are based on.
 
+> **Note:** The `persist.sys.*` options below work on HyperOS 3.0 and earlier only. Enhanced Device Level List and Linkage State are not affected.
+
 #### Control Center Blur (Glassy Blur)
 Triggers `service call miui.mqsas.IMQSNative 21` to enable `persist.sys.background_blur_supported`. Enables advanced transparency/blur effects across the Control Center overlay and app folders where the HyperOS blur stack is present.
 
@@ -238,6 +244,8 @@ Access via the **⋮** menu on the HyperOS Optimization screen. Applies a fixed 
 | **Gaming** | 6 | 6 | 1024 | ✅ Forced | 🚫 Restricted | — | — | ❄️ Frozen |
 | **Battery** | 0 | 0 | Default | ❌ Off | ✅ Allowed | ✅ Optimized | 🚫 Restricted | ❄️ Frozen |
 | **Stock (Revert)** | 0 | 0 | Default | ❌ Off | ✅ Allowed | ❌ Restored | ✅ Restored | ✅ Re-enabled |
+
+> **Note:** On HyperOS 3.1 the CPU/GPU levels are not applied; the rest of the preset still is.
 
 ---
 
